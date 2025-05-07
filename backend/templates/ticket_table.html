@@ -44,13 +44,18 @@
       }
       table {
         width: 100%;
+        table-layout: fixed;
         border-collapse: collapse;
       }
       th,
       td {
-        padding: 10px;
         text-align: left;
-        border-bottom: 1px solid #ddd;
+        white-space: nowrap;
+      }
+      td {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        vertical-align: middle;
       }
       th {
         background-color: #f2f2f2;
@@ -58,6 +63,36 @@
       .actions button {
         width: auto;
         margin-right: 8px;
+      }
+      th:nth-child(1),
+      td:nth-child(1) {
+        width: 5%; /* ID */
+      }
+
+      th:nth-child(2),
+      td:nth-child(2) {
+        width: 30%; /* Title */
+      }
+
+      th:nth-child(3),
+      td:nth-child(3) {
+        width: 15%; /* Status */
+      }
+
+      th:nth-child(4),
+      td:nth-child(4) {
+        width: 15%; /* Priority */
+      }
+
+      th:nth-child(5),
+      td:nth-child(5) {
+        width: 10%; /* User ID */
+      }
+
+      th:nth-child(6),
+      td:nth-child(6) {
+        width: 25%; /* Actions */
+        white-space: nowrap;
       }
     </style>
   </head>
@@ -73,11 +108,10 @@
           placeholder="Description"
           required
         ></textarea>
-        <label for="status">Status</label>
         <select id="status">
           <option value="open">Open</option>
-          <option value="in_progress">In Progress</option>
-          <option value="closed">Closed</option>
+          <option value="working">Working</option>
+          <option value="finished">Finished</option>
         </select>
         <label for="priority">Priority</label>
         <select id="priority">
@@ -91,7 +125,7 @@
     </div>
 
     <div class="table-container">
-      <h3>Existing Tickets</h3>
+      <h3>Open Tickets</h3>
       <table>
         <thead>
           <tr>
@@ -103,19 +137,82 @@
             <th>Actions</th>
           </tr>
         </thead>
+
         <tbody>
-          {% for ticket in tickets %}
-          <tr>
+          {% for ticket in open_tickets %}
+          <tr data-id="{{ ticket.id }}">
             <td>{{ ticket.id }}</td>
-            <td>{{ ticket.title }}</td>
-            <td>{{ ticket.status }}</td>
-            <td>{{ ticket.priority }}</td>
+            <td class="title">{{ ticket.title }}</td>
+            <td class="status">{{ ticket.status|title }}</td>
+            <td class="priority">{{ ticket.priority|title }}</td>
             <td>{{ ticket.user_id }}</td>
             <td class="actions">
               <button onclick="updateTicket({{ ticket.id }})">Update</button>
               <button onclick="deleteTicket({{ ticket.id }})">Delete</button>
             </td>
           </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3>Working Tickets</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>User ID</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for ticket in working_tickets %}
+          <tr data-id="{{ ticket.id }}">
+            <td>{{ ticket.id }}</td>
+            <td class="title">{{ ticket.title }}</td>
+            <td class="status">{{ ticket.status|title }}</td>
+            <td class="priority">{{ ticket.priority|title }}</td>
+            <td>{{ ticket.user_id }}</td>
+            <td class="actions">
+              <button onclick="updateTicket({{ ticket.id }})">Update</button>
+              <button onclick="deleteTicket({{ ticket.id }})">Delete</button>
+            </td>
+          </tr>
+
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3>Finished Tickets</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>User ID</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for ticket in finished_tickets %}
+          <tr data-id="{{ ticket.id }}">
+            <td>{{ ticket.id }}</td>
+            <td class="title">{{ ticket.title }}</td>
+            <td class="status">{{ ticket.status|title }}</td>
+            <td class="priority">{{ ticket.priority|title }}</td>
+            <td>{{ ticket.user_id }}</td>
+            <td class="actions">
+              <button onclick="updateTicket({{ ticket.id }})">Update</button>
+              <button onclick="deleteTicket({{ ticket.id }})">Delete</button>
+            </td>
+          </tr>
+
           {% endfor %}
         </tbody>
       </table>
@@ -157,23 +254,77 @@
       }
 
       function updateTicket(id) {
-        const newTitle = prompt("Enter new title:");
-        const newStatus = prompt(
-          "Enter new status (open, in_progress, closed):"
-        );
-        const newPriority = prompt("Enter new priority (low, medium, high):");
+        // Get current values
+        const row = document.querySelector(`tr[data-id="${id}"]`);
+        const currentTitle = row.querySelector(".title").innerText.trim();
+        const currentStatus = row
+          .querySelector(".status")
+          .innerText.toLowerCase();
+        const currentPriority = row
+          .querySelector(".priority")
+          .innerText.toLowerCase();
+
+        const formHtml = `
+          <div id="updateModal" style="
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5); display: flex;
+            align-items: center; justify-content: center; z-index: 9999;">
+            <div style="background: white; padding: 20px; border-radius: 8px; width: 300px;">
+              <h3>Update Ticket</h3>
+              <label>Title</label>
+              <input id="newTitle" value="${currentTitle}" style="width: 100%; margin-bottom: 10px;" />
+              <label>Status</label>
+              <select id="newStatus" style="width: 100%; margin-bottom: 10px;">
+                <option value="open" ${
+                  currentStatus === "open" ? "selected" : ""
+                }>Open</option>
+                <option value="working" ${
+                  currentStatus === "working" ? "selected" : ""
+                }>Working</option>
+                <option value="finished" ${
+                  currentStatus === "finished" ? "selected" : ""
+                }>Finished</option>
+              </select>
+              <label>Priority</label>
+              <select id="newPriority" style="width: 100%; margin-bottom: 10px;">
+                <option value="low" ${
+                  currentPriority === "low" ? "selected" : ""
+                }>Low</option>
+                <option value="medium" ${
+                  currentPriority === "medium" ? "selected" : ""
+                }>Medium</option>
+                <option value="high" ${
+                  currentPriority === "high" ? "selected" : ""
+                }>High</option>
+              </select>
+              <button onclick="submitUpdate(${id})" style="margin-right: 10px;">Save</button>
+              <button onclick="closeModal()">Cancel</button>
+            </div>
+          </div>
+        `;
+
+        document.body.insertAdjacentHTML("beforeend", formHtml);
+      }
+
+      function closeModal() {
+        const modal = document.getElementById("updateModal");
+        if (modal) modal.remove();
+      }
+
+      function submitUpdate(id) {
+        const title = document.getElementById("newTitle").value;
+        const status = document.getElementById("newStatus").value;
+        const priority = document.getElementById("newPriority").value;
+
         fetch(`/api/tickets/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: newTitle,
-            status: newStatus,
-            priority: newPriority,
-          }),
+          body: JSON.stringify({ title, status, priority }),
         })
           .then((res) => res.json())
           .then((data) => {
             alert(data.message);
+            closeModal();
             window.location.reload();
           });
       }

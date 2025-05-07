@@ -84,8 +84,15 @@ def delete_ticket(ticket_id):
 # UI Route
 @app.route('/tickets')
 def ticket_table():
-    tickets = Ticket.query.order_by(Ticket.timestamp.desc()).all()
-    return render_template('ticket_table.html', tickets=tickets)
+    open_tickets = Ticket.query.filter_by(status='open').all()
+    working_tickets = Ticket.query.filter_by(status='working').all()
+    finished_tickets = Ticket.query.filter_by(status='finished').all()
+    return render_template(
+        'ticket_table.html',
+        open_tickets=open_tickets,
+        working_tickets=working_tickets,
+        finished_tickets=finished_tickets
+    )
 
 # Register Blueprints
 app.register_blueprint(ticket_bp, url_prefix='/api/tickets')
