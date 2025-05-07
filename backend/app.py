@@ -98,6 +98,10 @@ def ticket_table():
 app.register_blueprint(ticket_bp, url_prefix='/api/tickets')
 app.register_blueprint(user_bp, url_prefix='/api/users')
 
+@app.route('/')
+def index():
+    return '<h3>Welcome to ServiceTrack! Go to <a href="/tickets">/tickets</a> to view the dashboard.</h3>'
+
 print("Running app.py...")
 
 if __name__ == '__main__':
