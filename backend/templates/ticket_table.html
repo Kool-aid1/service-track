@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ticket Dashboard</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 20px;
+      }
+      h2 {
+        text-align: center;
+        color: #333;
+      }
+      .form-container,
+      .table-container {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin: 20px auto;
+        width: 80%;
+      }
+      input,
+      textarea,
+      select,
+      button {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 12px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      .actions button {
+        width: auto;
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Ticket Dashboard</h2>
+
+    <div class="form-container">
+      <h3>Create a New Ticket</h3>
+      <form id="createTicketForm">
+        <input type="text" id="title" placeholder="Title" required />
+        <textarea
+          id="description"
+          placeholder="Description"
+          required
+        ></textarea>
+        <label for="status">Status</label>
+        <select id="status">
+          <option value="open">Open</option>
+          <option value="in_progress">In Progress</option>
+          <option value="closed">Closed</option>
+        </select>
+        <label for="priority">Priority</label>
+        <select id="priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+        <input type="number" id="user_id" placeholder="User ID" required />
+        <button type="submit">Create Ticket</button>
+      </form>
+    </div>
+
+    <div class="table-container">
+      <h3>Existing Tickets</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>User ID</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ticket in tickets %}
+          <tr>
+            <td>{{ ticket.id }}</td>
+            <td>{{ ticket.title }}</td>
+            <td>{{ ticket.status }}</td>
+            <td>{{ ticket.priority }}</td>
+            <td>{{ ticket.user_id }}</td>
+            <td class="actions">
+              <button onclick="updateTicket({{ ticket.id }})">Update</button>
+              <button onclick="deleteTicket({{ ticket.id }})">Delete</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      document
+        .getElementById("createTicketForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const data = {
+            title: document.getElementById("title").value,
+            description: document.getElementById("description").value,
+            status: document.getElementById("status").value,
+            priority: document.getElementById("priority").value,
+            user_id: parseInt(document.getElementById("user_id").value),
+          };
+          fetch("/api/tickets", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          })
+            .then((res) => res.json())
+            .then((result) => {
+              alert(result.message);
+              window.location.reload();
+            });
+        });
+
+      function deleteTicket(id) {
+        fetch(`/api/tickets/${id}`, {
+          method: "DELETE",
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            alert(data.message);
+            window.location.reload();
+          });
+      }
+
+      function updateTicket(id) {
+        const newTitle = prompt("Enter new title:");
+        const newStatus = prompt(
+          "Enter new status (open, in_progress, closed):"
+        );
+        const newPriority = prompt("Enter new priority (low, medium, high):");
+        fetch(`/api/tickets/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: newTitle,
+            status: newStatus,
+            priority: newPriority,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            alert(data.message);
+            window.location.reload();
+          });
+      }
+    </script>
+  </body>
+</html>
